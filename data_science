@@ -1,0 +1,176 @@
+import pandas as pd
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+import urllib2
+import csv
+import numpy as np
+
+
+url = "http://aima.cs.berkeley.edu/data/iris.csv"
+set1 = urllib2.Request(url)
+iris_p = urllib2.urlopen(set1)
+iris = pd.read_csv(iris_p, sep=",", decimal=".", header=None,
+                         names= ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'target'])
+#load data from url
+
+print iris.head()
+print iris.tail(2)
+#first 5 or last 2 lines of the dataset
+
+print iris.columns
+#the columns names
+
+Y = iris["target"]
+X = iris[["sepal_length", "sepal_width"]]
+#a subset of iris dataset
+
+X.shape
+Y.shape
+#the shape of the dataset
+
+iris.fillna(100)
+iris.fillna(iris.mean(axis=0))
+iris.fillna(-99, inplace=True)#truly change the value in the datafram
+#fill the Nan data as 100/-99
+
+pd.read_csv("file.csv", error_bad_lines=False)
+#ignore the bad data line
+
+iris_chunks=pd.read_csv("file.csv", header=None, names=["c1","c2","c3"], chunksize=10)
+#for the big dataset, the whole file will not input to the memory right now, the subset of size 3X10
+#will input each time
+for chunk in iris_chunks:
+    print chunk.shape
+    print chunk
+
+iris_interator=pd.read_csv("file.csv", interator=True)
+#for big dataset, you can easy to dicide the size of the dataset
+iris_interator.get_chunk(10)
+
+csv.reader()
+csv.Dialect()
+#pandas can input the data from excel, HDFS, SQL, JSON, HTML, Stata.....
+
+with open("iris_filename", "rb") as data_stream:
+    for n, row in enumerate(csv.DictReader(data_stream, fieldnames=['sepal_length', "sepal_width"],
+                                           dialect="excel")):
+        if n==0:
+            print n, row
+        else:
+            break
+#open a bigdataset from excel, and print the first line
+#the uotput row is a dict type
+#if use reader instead of DictReader, the ouput is not a dict
+
+def batch_read(filename, batch=5):
+    with open(filename, 'rb') as data_stream:
+        batch_output = list()
+        for n, row in enumerate(csv.reader(data_stream,dialect='excel')):
+            if n>0 and n%batch==0:
+                yield(np.array(batch_output))
+                batch_output=()
+            batch_output.append(row)
+        yield(np.array(batch_output))
+for batch_input in batch_read("iris_filename", batch=3):
+    print batch_input
+    break
+#print the first 3 lines of the files, if not break the loop, python will print the whole file.
+
+#create a dataset.
+#array must all be the same length
+my_dataset= pd.DataFrame({'col1': range(5),
+                          'col2': [0.1]*5,
+                          'col3': 1.0,
+                          'col4': 'Hello world!'})
+print my_dataset
+print my_dataset.dtypes
+my_dataset['col1'] = my_dataset['col1'].astype(float)
+#change the data type
+
+
+mask_dataset = my_dataset['col1'] > 0
+#a mask array
+mask_target = iris['target'] == 'virginica'
+iris.loc[mask_target, 'target'] = 'New label'
+#change the value 'virginica' into 'New label'
+
+iris['target'].unique()
+#show all the value of 'target', like 'virginica', 'setosa', and 'versicolor'.
+
+grouped_targets_mean = iris.groupby(['target']).mean()
+grouped_targets_var = iris.groupby(['target']).var()
+#compute the mean and std value of all features for the certain 'target', such as 'virginica'
+
+iris.sort_index(by='sepal_length')
+#sort the datafram by 'sepal_length'
+
+smooth_time_series = pd.rolling_mean(time_series, 5)
+median_time_series = pd.rolling_median(time_series, 5)
+#rolling the time series data for  reduce the noise
+
+dataset = pd.read_csv('1.csv', index_col=0)
+#tell python the first col is the index instead of data, like 100, 101, 102, 103, 104......
+#then we can use this index to get the data, like dataset['col2'][104]
+dataset['col2'][104]#get by row/col name
+dataset.loc[104, 'col2']#get by row/col name
+dataset.ix[104, 'col2']#get by row/col name
+dataset.ix[104, 2]#0('col1'), 1('col2'), 2('col3'), get by row/col name or position
+dataset.iloc[4, 2]#4(104), 2('col3'), get by position
+#sub array
+dataset[['col3', 'col4']][0:2]
+dataset.loc[range(100, 102), ['col3', 'col4']]
+dataset.ix[range(100, 102), ['col3', 'col4']]
+dataset.ix[range(100, 102), [3, 4]]
+dataset.iloc[range(2), [3, 4]]
+
+
+#change the categorical feature into binary array code
+categorical_feature = pd.Series(['sunny', 'cloudy', 'snowy', 'rainy', 'foggy'])
+mapping = pd.get_dummies(categorical_feature)
+print mapping
+#   cloudy  foggy  rainy  snowy  sunny
+#0       0      0      0      0      1
+#1       1      0      0      0      0
+#2       0      0      0      1      0
+#3       0      0      1      0      0
+#4       0      1      0      0      0
+mapping['sunny']
+#0    1
+#1    0
+#2    0
+#3    0
+#4    0
+
+
+categories = ['sci.med', 'sci.space']
+twenty_sci_news = fetch_20newsgroups(categories=categories)
+print twenty_sci_news.data[0]
+print twenty_sci_news.filenames
+print twenty_sci_news.target[0] #0 for 'sci.med', 1 for 'sci.space'
+#input a data file about the sic journal. those are string data
+count_vect = CountVectorizer()
+word_count = count_vect.fit_transform(twenty_sci_news.data)
+word_count.shape
+#Vectorize the txt data into array(0,0,0,1,2,1,0,0,3,0,1,0,1,0) for each sample,
+# in which 1 means the word are exist one time
+print word_count[0]
+#show the Vector of the first file
+word_list = count_vect.get_feature_names()
+for n in word_count[0].indices:
+    print word_list[n], 'appears', word_count[0, n], 'times.'
+
+tf_vect = TfidfVectorizer(use_idf=False, norm='l1')
+word_freq = tf_vect.fit_transform(twenty_sci_news.data)
+word_list = tf_vect.get_feature_names()
+for n in word_freq[0].indices:
+    print word_list[n], 'had frequency', word_freq[0, n]
+#show the normalize frequency of each word for the dataset
+
+tfidf_vect = TfidfVectorizer()#the frequency will multiple the number of files with this word
+word_tfidf = tfidf_vect.fit_transform(twenty_sci_news.data)
+word_list = tfidf_vect.get_feature_names()
+for n in word_tfidf[0].indices:
+    print word_list[n], 'had tfdif', word_tfidf[0, n]
+#this can check the word in the files, ont only one files
+
+
