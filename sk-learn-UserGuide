@@ -1,0 +1,77 @@
+# -*- coding: utf-8 -*-
+"""
+User Guide
+"""
+
+"""
+1. Supervised learning
+"""
+#############################################
+#1.1. Generalized Linear Models
+#############################################
+#线性回归
+from sklearn import linear_model
+reg = linear_model.LinearRegression()
+reg.fit ([[0, 0], [1, 1], [2, 2]], [0, 1, 2])
+#得到回归系数
+reg.coef_
+#当X矩阵的列之间有很强的线性相关时，矩阵接近奇异。
+#计算复杂度为np^2,n是样本数，p是特征数
+
+#Ridge Regression
+#岭回归通过对系数大小施加惩罚来解决普通最小二乘法的一些问题。
+from sklearn import linear_model
+reg = linear_model.Ridge (alpha = .5)
+#alpha是惩罚系数，alpha越大的话，系数对于共线性更加稳健。系数倾向于更小，即倾向于无线性相关。
+reg.fit ([[0, 0], [0, 0], [1, 1]], [0, .1, 1]) 
+reg.coef_
+reg.intercept_ 
+#计算复杂度为np^2,n是样本数，p是特征数
+#RidgeCV通过alpha参数的内置交叉验证来实现岭回归。 
+#该对象的工作方式与GridSearchCV相同，不同之处在于它缺省为通用交叉验证（GCV），这是一种有效的一次性交叉验证形式：
+from sklearn import linear_model
+reg = linear_model.RidgeCV(alphas=[0.1, 1.0, 10.0])
+reg.fit([[0, 0], [0, 0], [1, 1]], [0, .1, 1])       
+reg.alpha_
+#0.1
+#通过这种方式可以更好的得到alpha的值，而不是人为地去规定它
+
+#Lasso
+#其惩罚项不是用L2范数而是L1范数，这使得系数可以归于零，即可以进行参数选择。
+#套索是估计稀疏系数的线性模型。在某些情况下它是有用的，因为它倾向于选择具有较少参数值的解决方案，
+#从而有效地减少给定解决方案所依赖的变量的数量。出于这个原因，套索及其变体是压缩感测领域的基础。
+from sklearn import linear_model
+reg = linear_model.Lasso(alpha = 0.1)
+reg.fit([[0, 0], [1, 1]], [0, 1])
+reg.predict([[1, 1]])
+#array([ 0.8])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
