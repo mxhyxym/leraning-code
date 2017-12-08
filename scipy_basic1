@@ -1,0 +1,181 @@
+# -*- coding: utf-8 -*-
+
+'''用Python做科学计算一书中的scipy简单基本介绍'''
+
+'''物理常数'''
+from scipy import constants
+print constants.c
+print constants.h
+'''支持的所有物理常数'''
+constants.physical_constants
+'''单位转化'''
+print constants.mile 
+print constants.gram
+
+'''特殊函数'''
+from scipy import special
+print special.gamma(4)
+print special.gamma(1+1j) #计算gamma函数的值
+'''gamma函数是结成函数在复数中的扩展，增加非常快，如果需要计算很大的gamma函数，可以用：'''
+print special.gammaln(1000)
+print special.log1p(0.000000001) #计算当x很小时，1+x的对数
+
+'''optimize'''
+from scipy.optimize import leastsq
+import numpy as np
+'''最小二乘法'''
+x=np.arange(9)
+y=np.arange(9)-1
+def residuals(p):
+    k, b = p
+    return y-(k*x+b)
+r=leastsq(residuals, [0,1])
+k, b = r[0]
+print "k=", k, "b=", b
+'''fmin, fim_bfgs等方法可以用来求函数的最小值'''
+'''fslove方法可以求解非线性方程组'''
+from scipy.optimize import fsolve
+from math import sin
+def f(x):
+    x0, x1, x2 = x.tolist()#计算单个浮点型数时，转换为python内置的标准浮点型会提高运算速度
+    return [
+            5*x1+3,
+            4*x0*x0 - 2*sin(x1*x2),
+            x1*x2 - 1.5
+            ]
+result = fsolve(f, [1,1,1])
+print result
+print f(result)
+
+
+'''插值:从离散数据中得到未知点的数据，比如将两点的平均作为这两点中间点的值'''
+'''B样条曲线插值'''
+import numpy as np
+import pylab as pl
+from scipy import interpolate
+'''
+interp1d(x, y, kind="linear", ...)
+kind='zero'/'nearset' 阶梯插值，即零阶B样条插值
+'slinear'/'linear' 线性插值，即1阶B样条插值
+'quadratic'/'cubic' 2阶3阶B样条
+更高阶时可以直接用函数指定
+'''
+x=np.linspace(0,10,11)
+y=np.sin(x)
+xnew= np.linspace(0,10,101)
+pl.plot(x,y,'ro')
+for kind in ['nearest','zero','slinear','quadratic']:
+    f=interpolate.interp1d(x,y,kind=kind)
+    ynew=f(xnew)
+    pl.plot(xnew,ynew,label=str(kind))
+pl.legend(loc="lower right")
+pl.show
+
+'''外推和Spline拟合'''
+'''外推可以得到原数据取值范围之外的数据
+UnivariateSpline(x, y, w=None, bbox=[None, None], k=3, s=None)
+xy为原始数据，x必须为递增序列
+w为每个数据点指定的权重值
+k为样条曲线的阶数
+s为平滑参数，当s为零时，样条曲线过所有的点
+'''
+x1=np.linspace(0,10,20)
+y1=np.sin(x)
+sx1=np.linspace(0,12,100)
+sy1=interpolate.UnivariateSpline(x1,y1,s=0)
+x2=np.linspace(0,20,200)
+y2=np.sin(x2)+np.random.standard_normal(len(x2))*0.2
+sx2=np.linspace(0,20,2000)
+sy2=interpolate.UnivariateSpline(x2,y2,s=8)(sx2)#因为有噪声所以不需要过所有的点
+
+'''二维插值
+interp2d(x ,y, kind='linear',...)
+kind=linear, cubic, quintic
+'''
+
+'''积分'''
+from scipy import integrate
+def half_circle(x):
+    return (1-x**2)**0.5
+pi_half, err = integrate.quad(half_circle,-1,1)
+print pi_half*2
+'''二重积分dblquad(): dblquad(func2d, a, b, gfun, hfun)
+三重积分tplquad()'''
+def half_sphere(x,y):
+    return (1-x**2-y**2)**0.5
+integrate.dblquad(half_sphere, -1, 1, 
+                  lambda x:-half_circle(x), 
+                  lambda x:half_circle(x))
+
+'''解常微分方程odeint()'''
+
+'''信号处理'''
+'''用中值滤波剔除瞬间噪声'''
+from scipy import signal
+t = np.arange(0,20,0.1)
+x=np.sin(t)
+x[np.random.randint(0,len(t),20)] += np.random.standard_normal(20)*0.6
+x2=signal.medfilt(x,5)#5为窗口值，必须为奇数
+'''排序滤波是更为普通的滤波方法，oder_filter(a, domain, rank)'''
+
+
+'''图像处理ndimage
+filter图像滤波
+fourier傅里叶变换
+interpolation插值，旋转，放射变换
+measurements信息测量
+morphlolgy形态学处理
+'''
+a=[[0,0,0],[0,1,0],[0,0,0]]
+import scipy.ndimage.morphology as mpy
+b=mpy.binary_dilation(a)#四通膨胀运算
+b=mpy.binary_dilation(a, structure=[[1,1,1],[1,1,1],[1,1,1]])#八联通膨胀运算
+'''通过设置不同的structure来决定膨胀的结果
+binary_erosion是侵蚀运算，与膨胀运算相反
+更基本的图像运算为binary_hit_or_miss(input, structure1=None, structure2=None, ....)'''
+
+'''统计stats
+获取所有连续随机变量'''
+from scipy import stats
+contin_list = [k for k,v in stats.__dict__.items() if isinstance(v, stats.rv_continuous)]
+'''所有连续随机变量都有如下方法
+rvs对随机变量进行随机取值，通过size指定数组大小
+pdf随机变量的概率密度函数
+cdf随机变量的累计分布函数
+sf随机变量的生存函数
+ppf累计分布函数的反函数
+stat计算随机变量的期望与方差
+fit对一组随机取样进行拟合，找出最适合取样数据的概率密度函数的系数'''
+stats.norm.stats()#正态函数的期望和方差
+x=stats.norm(loc=1.0, scale=2.0)#调整正态分布的中心值和标准差
+x.stats()
+xs=x.rvs(size=100000)
+np.mean(xs)
+np.var(xs)
+np.std(xs)
+stats.norm.fit(xs)#得到样本最优的正态参数fitting
+
+import pylab as pl
+t=np.arange(-10,10,0.01)
+pl.plot(t, x.pdf(t))#理论概率密度图
+p, t2 = np.histogram(xs, bins=100, normed=True)#直方统计，得到每个bin里面的计数
+t2 = (t2[:-1] + t2[1:])/2#得到每个bin的中心值
+pl.plot(t2,p)
+pl.plot(t, x.cdf(t))#理论累积分布图
+pl.plot(t2, np.add.accumulate(p)*(t2[1]-t2[0]))#实际的累积分布函数图
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
