@@ -1,0 +1,89 @@
+import numpy
+
+a = numpy.array([1, 2, 3, 4], dtype=numpy.float)
+numpy.arange(0,1,0.1)
+#create a array by begin, end and step.
+numpy.linspace(0, 1, 12)
+#create a array by begin, end and number of data.
+numpy.logspace(0, 2, 20)
+#create a array by begin(10^0), end(10^2) and number of data. 等比数列
+a = numpy.arange(5)
+#[0 1 2 3 4]
+def func(i):
+    return i % 4 + 1
+numpy.fromfunction(func, (10,))
+def func2(i, j):
+    return (i+1) * ( j+1)
+a = numpy.fromfunction(func2, (9,9))
+#九九乘法表
+
+print a.shape
+#(5,)
+print a.dtype
+#int64
+m = numpy.array([range(2),range(2)])
+#[[0 1]
+# [0 1]]
+print m.dtype
+#int64
+a=numpy.float64(16)
+#16.0
+#bool int8 16 32 64 uint8 16 32 64 float16 32 64 complex64 128
+numpy.arange(7, dtype="uint16")
+#[0 1 2 3 4 5 6]
+print a.dtype.itemsize
+#8 how large is this var in memory
+
+c = numpy.array([[1, 2, 3, 4],[4, 5, 6, 7], [7, 8, 9, 10]])
+c.shape = 4,3
+#chang the shape of the array
+c.shape = 2,-1
+#chang the shape of the array by auto determine the -1 axis.
+d = a.reshape((2,2))
+#do not change a
+#a and d share the data, so if change one of them, the other will be changed.
+
+#和Python的列表序列不同,numpy通过下标范围获取的新的数组是原始数组的一个视图。它与原始数组共享同一块数据空间
+b = a[3:7]
+b[2] = -10
+#a are changed!
+x = numpy.arange(10,1,-1)
+b=x[[3, 3, 1, 8]] # 获取x中的下标为3, 3, 1, 8的4个元素,组成一个新的数组,b和x不共享数据空间
+b = x[numpy.array([3,3,-3,8])]
+x[[3,5,1]] = -1, -2, -3 # 整数序列下标也可以用来修改元素的值
+
+x = numpy.arange(5,0,-1)
+x[numpy.array([True, False, True, False, False])]
+#array([5, 3])
+#当使用布尔数组b作为下标存取数组x中的元素时,将收集数组x中所有在数组b中对应下标为True的
+#元素。使用布尔数组作为下标获得的数组不和原始数组共享数据空间,注意这种方式只对应于布尔数
+#组,不能使用布尔列表。
+
+numpy.arange(0, 60, 10).reshape(-1, 1)
+#reshape can change a horizon vector into a vertical vector
+
+
+#personal define 结构数组
+persontype = numpy.dtype({
+'names':['name', 'age', 'weight'],
+'formats':['S32','i', 'f']})
+a = np.array([("Zhang",32,75.5),("Wang",24,65.2)],
+dtype=persontype)
+print a.dtype
+#a[0]是一个结构元素,它和数组a共享内存数据,因此可以通过修改它的字段,改变原始数组中的对应字段
+c = a[1]
+c["name"] = "Li"
+a[1]["name"]
+#"Li"
+b=a[:]["age"] # 或者a["age"]
+b[0] = 40
+a[0]["age"]
+#40
+
+#用下面的字典参数也可以定义结构类型,字典的关键字为结构中字段名,值为字段的类型描述,但是
+#由于字典的关键字是没有顺序的,因此字段的顺序需要在类型描述中给出,类型描述是一个组元,它
+#的第二个值给出字段的字节为单位的偏移量,例如age字段的偏移量为25个字节:
+numpy.dtype({'surname':('S25',0),'age':(numpy.uint8,25)})
+#dtype([('surname', '|S25'), ('age', '|u1')])
+
+
