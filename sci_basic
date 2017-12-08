@@ -1,0 +1,188 @@
+# -*- coding: utf-8 -*-
+"""
+scipy网站上的小教程
+"""
+
+import scipy
+from scipy import io as spio
+import numpy as np
+from scipy import misc
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.integrate import quad
+
+'''保存和读取数组数据'''
+a = np.ones((3, 3))
+spio.savemat('file.mat', {'a': a})
+data = spio.loadmat('file.mat', struct_as_record=True)
+print data['a']
+
+'''读取图片数据'''
+print misc.imread('111.jpg')
+print plt.imread('111.jpg')
+
+'''读取保存txt'''
+np.loadtxt()
+np.savetxt()
+'''智能导入txt和csv'''
+np.genfromtxt()
+np.recfromcsv()
+
+'''高速，有效率但numpy特有的二进制格式'''
+np.save()
+np.load()
+
+'''特殊函数 scipy.special
+贝塞尔函数，如scipy.special.jn()(整数n阶贝塞尔函数)
+椭圆函数(scipy.special.ellipj()雅可比椭圆函数，……)
+伽马函数：scipy.special.gamma()，
+还要注意scipy.special.gammaln,这个函数给出对数坐标的伽马函数，因此有更高的数值精度。
+'''
+
+'''线性代数运算：scipy.linalg'''
+arr = np.array([[1, 2],[3, 4]])
+scipy.linalg.det(arr)#函数计算方阵的行列式
+scipy.linalg.inv(arr)#函数计算方阵的逆
+scipy.linalg.svd(arr)#奇异值分解(SVD),SVD在信号处理和统计中运用很广
+
+'''快速傅里叶变换：scipy.fftpack'''
+
+'''优化和拟合：scipy.optimize'''
+'''找到函数最小值一般而有效的方法是从初始点使用梯度下降法。BFGS算法1是做这个的好方法：'''
+optimize.fmin_bfgs()
+'''如果函数有局部最小值，算法会因初始点不同找到这些局部最小而不是全局最小
+如果我们不知道全局最小值的邻近值来选定初始点，我们需要借助于耗费资源些的全局优化。
+为了找到全局最小点，最简单的算法是蛮力算法2，该算法求出给定格点的每个函数值。
+'''
+grid = (-10, 10, 0.1)
+xmin_global = optimize.brute(f, (grid,))
+'''
+对于大点的格点，scipy.optimize.brute()变得非常慢。
+scipy.optimize.anneal()提供了使用模拟退火的替代函数。
+为了找到局部最小，我们把变量限制在(0, 10)之间，使用scipy.optimize.fminbound():
+'''
+xmin_local = optimize.fminbound(f, 0, 10)
+
+'''找到标量函数的根
+为了寻找根，例如令f(x)=0的点，对以上的用来示例的函数f我们可以使用scipy.optimize.fsolve():'''
+root = optimize.fsolve(f, 1)  # 我们的初始猜测是1
+'''注意仅仅一个根被找到。检查f的图像在-2.5附近有第二个根。我们可以通过调整我们的初始猜测找到这一确切值：'''
+root = optimize.fsolve(f, -2.5)
+
+'''曲线拟合
+假设我们有从被噪声污染的f中抽样到的数据
+如果我们知道函数形式(当前情况是x^2 + sin(x))，但是不知道幅度。
+我们可以通过最小二乘拟合拟合来找到幅度。首先我们定义一个用来拟合的函数
+然后我们可以使用scipy.optimize.curve_fit()来找到a和b
+'''
+xdata = np.linspace(-10, 10, num=20)
+ydata = f(xdata) + np.random.randn(xdata.size) 
+def f2(x, a, b):
+    return a*x**2 + b*np.sin(x)
+guess = [2, 2]
+params, params_covariance = optimize.curve_fit(f2, xdata, ydata, guess)
+'''Scipy中提供所有最小化和根寻找算法的统一接口
+scipy.optimize.minimize(),scipy.optimize.minimize_scalar()和scipy.optimize.root()。
+它们允许通过method关键字方便地比较不同算法。
+你可以在scipy.optimize中找到用来解决多维问题的相同功能的算法。
+'''
+
+'''统计和随机数： scipy.stats'''
+a = np.random.normal(size=1000)
+bins = np.arange(-4, 5)
+histogram = np.histogram(a, bins=bins, normed=True)[0]
+bins = 0.5*(bins[1:] + bins[:-1])
+b = stats.norm.pdf(bins)  # norm是正态分布
+plt.plot(bins, histogram)
+plt.plot(bins, b)
+plt.show() 
+loc, std = stats.norm.fit(a)#对观测值拟合一个正态过程
+stats.scoreatpercentile(a, 50)#得到百分位数50%，就是等于median
+#百分位是CDF的一个估计器(累积分布函数)
+stats.ttest_ind(a, b)#t检验
+
+
+'''插值：scipy.interpolate'''
+
+'''数值积分：scipy.integrate'''
+from scipy.integrate import quad
+res, err = quad(np.sin, 0, np.pi/2)
+np.allclose(res, 1)
+np.allclose(err, 1 - res)
+'''其它可用的积分方案有fixed_quad,quadrature,romberg。
+scipy.integrate也是用来积分常微分方程(ODE)的功能程序'''
+
+'''信号处理：scipy.signal'''
+from scipy import signal 
+import pylab as pl
+'''scipy.signal.detrend()：移除信号的线性趋势'''
+t = np.linspace(0, 5, 100)
+x = t + np.random.normal(size=100)
+pl.plot(t, x, linewidth=3)
+pl.plot(t, signal.detrend(x), linewidth=3)
+'''scipy.signal.resample():使用FFT重采样n个点'''
+t = np.linspace(0, 5, 100)
+x = np.sin(t)
+pl.plot(t, x, linewidth=3)
+pl.plot(t[::2], signal.resample(x, 50), 'ko')
+'''Signal中有许多窗函数：scipy.signal.hamming(), scipy.signal.bartlett(), scipy.signal.blackman()
+Signal中有滤波器(中值滤波scipy.signal.medfilt(), 维纳滤波scipy.signal.wiener())，但是我们将在图像部分讨论。
+'''
+
+'''图像处理：scipy.ndimage'''
+from scipy import ndimage
+from scipy import misc
+'''图像的几何变换'''
+lena = misc.lena()
+shifted_lena = ndimage.shift(lena, (50, 50))
+shifted_lena2 = ndimage.shift(lena, (50, 50), mode='nearest')
+rotated_lena = ndimage.rotate(lena, 30)
+cropped_lena = lena[50:-50, 50:-50]
+zoomed_lena = ndimage.zoom(lena, 2)
+zoomed_lena.shape
+pl.subplot(321)
+pl.imshow(lena, cmap=cm.gray)
+pl.subplot(322)
+'''图像滤镜'''
+from scipy import misc
+lena = misc.lena()
+import numpy as np
+noisy_lena = np.copy(lena).astype(np.float)
+noisy_lena += lena.std()*0.5*np.random.standard_normal(lena.shape)
+blurred_lena = ndimage.gaussian_filter(noisy_lena, sigma=3)
+median_lena = ndimage.median_filter(blurred_lena, size=5)
+from scipy import signal
+wiener_lena = signal.wiener(blurred_lena, (5,5))
+'''数学形态学'''
+'''基本的数学形态操作使用一个结构元素(structuring element)来改变其它几何结构'''
+el = ndimage.generate_binary_structure(2, 1)
+el.astype(np.int)
+'''腐蚀'''
+a = np.zeros((7,7), dtype=int)
+a[1:6, 2:5] = 1
+ndimage.binary_erosion(a).astype(a.dtype)
+'''腐蚀移除对象使结构更小'''
+'''膨胀'''
+a = np.zeros((5,5))
+a[2, 2] = 1
+ndimage.binary_dilation(a).astype(a.dtype)
+'''开操作(opening) '''
+a = np.zeros((5,5), dtype=np.int)
+a[1:4, 1:4] = 1; a[4, 4] = 1
+'''开操作可以移除小的对象'''
+ndimage.binary_opening(a, structure=np.ones((3,3))).astype(np.int)
+'''开操作也能平滑边角'''
+ndimage.binary_opening(a).astype(np.int)
+'''闭操作(closing): ndimage.binary_closing
+一个开操作移除小的结构，而一个闭操作填补小的空洞。这种操作因此可被用来“清理”图像。'''
+'''图像测量'''
+
+
+
+
+
+
+
+
+
+
