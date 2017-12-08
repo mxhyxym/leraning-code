@@ -1,0 +1,244 @@
+# -*- coding: utf-8 -*-
+"""
+SciPy Notes and Guide
+Author:	Dave Kuhlman
+http://www.davekuhlman.org
+"""
+'''
+SciPy可以做数组运算（numpy），apply scientific, statistical, and mathematical operations to those arrays of data，
+h5py or PyTables可以有效处理大型数组，由于其实C语言写的，速度快。
+scipy中内置了numpy的功能
+数值计算还有PyData，Pandas，Numexpr，Numba，Sympy， h5py，PyTables等
+'''
+import scipy
+import numpy
+
+help(scipy.special)#帮助
+help(scipy.zeros)
+dir(scipy.stats)#列出模块的函数
+
+a2 = numpy.zeros((4,3),dtype='int32')
+a1 = scipy.zeros((4,3),dtype='int32')
+#scipy中内包含了numpy的函数功能
+a3 = numpy.asarray(a2)
+#将scipy的数组转换成numpy形式的数组
+
+a  = [[1,2,3], [4,5,6], [7,8,9]]
+b = numpy.array(a)
+c = [list(x) for x in list(b)]
+#在python list与numpy array中转换
+
+
+#从txt中抽取数据到numpy array中
+import numpy as np
+from io import BytesIO
+data = "1, 2, 3\n4, 5, 6"
+np.genfromtxt(BytesIO(data), delimiter=",")
+'''
+这里设置分隔符为逗号，还有常见的"\t"分隔符
+不设置则认为是空格或者table键
+有的表格是对每个数据固定长度的，如下：
+'''
+data = "  1  2  3\n  4  5 67\n890123  4"
+np.genfromtxt(BytesIO(data), delimiter=3)
+data = "123456789\n   4  7 9\n   4567 9"
+np.genfromtxt(BytesIO(data), delimiter=(4, 3, 2))
+data = "1, abc , 2\n 3, xxx, 4"
+np.genfromtxt(BytesIO(data), delimiter=",", dtype="|U5", autostrip=True)
+#autostrip=True参数可以帮助去掉前后的空格
+data = """#
+... # Skip me !
+... # Skip me too !
+... 1, 2
+... 3, 4
+... 5, 6 #This is the third line of the data
+... 7, 8
+... # And here comes the last line
+... 9, 0
+... """
+np.genfromtxt(BytesIO(data), comments="#", delimiter=",")
+#comments="#"意味着去掉所有#开头的行
+#names=True参数表示第一行是该文件的名称
+
+data = "\n".join(str(i) for i in range(10))
+np.genfromtxt(BytesIO(data),)
+np.genfromtxt(BytesIO(data), skip_header=3, skip_footer=5)
+#skip_header=3是指将头三行认为是文件头去掉，skip_footer类似
+data = "1 2 3\n4 5 6"
+np.genfromtxt(BytesIO(data), usecols=(0, -1))
+#只输入第一行和最后一行
+data = "1 2 3\n4 5 6"
+np.genfromtxt(BytesIO(data), names="a, b, c", usecols=("a", "c"))
+np.genfromtxt(BytesIO(data), names="a, b, c", usecols=("a, c"))
+#可以先指定列名称，然后再用列名称指定需要的行
+#可以指定每一列的数据类型：
+dtype=(int, float, float)
+dtype=[('A', int), ('B', float)]
+
+data = BytesIO("So it goes\n#a b c\n1 2 3\n 4 5 6")
+np.genfromtxt(data, skip_header=1, names=True)
+#>>>array([(1.0, 2.0, 3.0), (4.0, 5.0, 6.0)],
+#      dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
+#同时去掉头文件以及给定列名称
+np.genfromtxt(data, dtype=(int, float, int), defaultfmt="var_%02i")
+#>>>array([(1, 2.0, 3), (4, 5.0, 6)],
+#      dtype=[('var_00', '<i8'), ('var_01', '<f8'), ('var_02', '<i8')])
+#规则生成列名称
+
+
+import numpy as np
+import csv
+def test(filename):
+    '''
+    csv文件的输入与输出
+    '''
+    data1 = np.array([[1, 2, 3], [4, 5, 6]], dtype='f')
+    print 'data1:', data1
+    with open(filename, 'wb') as csvfile:
+        spamwriter = csv.writer(csvfile)
+        for row in data1:
+            spamwriter.writerow(list(row))
+    with open(filename, 'rb') as csvfile:
+        csvreader = csv.reader(csvfile)
+        data2 = []
+        for row in csvreader:
+            row = [float(x) for x in row]
+            data2.append(row)
+    data3 = np.array(data2, dtype=np.float_)
+    print 'data3:', data3
+test('tmp01.csv')
+
+import numpy as np
+import h5py
+def test(filename, datasetname):
+    '''
+    HDF5文件的输入与输出
+    '''
+    data1 = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float_)
+    print 'data1:', data1
+    hdf5file = h5py.File(filename)
+    dataset01 = hdf5file.create_dataset(
+        datasetname, data1.shape, dtype=np.float_)
+    dataset01[...] = data1
+    print 'Dataset names:', list(hdf5file)
+    data2 = np.array(hdf5file[datasetname])
+    print 'data2:', data2
+test('tmp01.hdf5', 'dataset01')
+
+
+'''
+PyTables是专门用来读取和写入HDF5文件的
+'''
+
+
+'''
+scipy的基本函数
+'''
+np.r_[-3:+4]
+#>>>array([-3, -2, -1,  0,  1,  2,  3])
+
+def Polynomtest():
+    a = scipy.poly1d([2, 4, 3, 5])
+    b = scipy.poly1d([5, 3, 2, 4])
+    print a
+    print b
+    print '-' * 40
+    print a * b
+Polynomtest()
+
+
+def f1(x, y, z):
+    return x + y + z
+def vectorizetest():
+    '''
+    通过vectorize函数将f1函数变成一个可以处理向量的函数，而不仅仅能接受一个元素
+    '''
+    a = np.arange(12)
+    b = np.arange(10, 22)
+    c = np.arange(20, 32)
+    print a
+    print b
+    print c
+    print '-' * 40
+    g1 = np.vectorize(f1)
+    print g1(a, b, c)
+vectorizetest()
+
+'''
++++++++++Functions:+++++++++++
+array - NumPy Array construction
+zeros - Return an array of all zeros
+empty - Return an unitialized array
+shape - Return shape of sequence or array
+rank - Return number of dimensions
+size - Return number of elements in entire array or a certain dimension
+fromstring - Construct array from (byte) string
+take - Select sub-arrays using sequence of indices
+put - Set sub-arrays using sequence of 1-D indices
+putmask - Set portion of arrays using a mask
+reshape - Return array with new shape
+repeat - Repeat elements of array
+choose - Construct new array from indexed array tuple
+cross_correlate - Correlate two 1-d arrays
+searchsorted - Search for element in 1-d array
+sum - Total sum over a specified dimension
+average - Average, possibly weighted, over axis or array.
+cumsum - Cumulative sum over a specified dimension
+product - Total product over a specified dimension
+cumproduct - Cumulative product over a specified dimension
+alltrue - Logical and over an entire axis
+sometrue - Logical or over an entire axis
+allclose - Tests if sequences are essentially equal
+
+++++++++More Functions:++++++++
+arrayrange (arange) - Return regularly spaced array
+asarray - Guarantee NumPy array
+sarray - Guarantee a NumPy array that keeps precision
+convolve - Convolve two 1-d arrays
+swapaxes - Exchange axes
+concatenate - Join arrays together
+transpose - Permute axes
+sort - Sort elements of array
+argsort - Indices of sorted array
+argmax - Index of largest value
+argmin - Index of smallest value
+innerproduct - Innerproduct of two arrays
+dot - Dot product (matrix multiplication)
+outerproduct - Outerproduct of two arrays
+resize - Return array with arbitrary new shape
+indices - Tuple of indices
+fromfunction - Construct array from universal function
+diagonal - Return diagonal array
+trace - Trace of array
+dump - Dump array to file object (pickle)
+dumps - Return pickled string representing data
+load - Return array stored in file object
+loads - Return array from pickled string
+ravel - Return array as 1-D
+nonzero - Indices of nonzero elements for 1-D array
+shape - Shape of array
+where - Construct array from binary result
+compress - Elements of array where condition is true
+clip - Clip array between two values
+ones - Array of all ones
+identity - 2-D identity array (matrix)
+'''
+
+scipy.absolute(np.array([-1, 2, -3, 4, -5, 6, -7]))
+#>>>array([1, 2, 3, 4, 5, 6, 7])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
