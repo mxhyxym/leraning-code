@@ -1,0 +1,595 @@
+# -*- coding: utf-8 -*-
+"""
+Quick Start of scikit-learn
+"""
+from __future__ import print_function
+
+'''加载内置数据'''
+from sklearn import datasets
+iris = datasets.load_iris()
+digits = datasets.load_digits()
+
+#加载数据矩阵以及结果矩阵，这里是手写识别的数据
+digits.data
+digits.target
+digits.images[0]#第一幅手写矩阵，是8X8的像素的二值矩阵
+
+#在选择参数时，可以利用grid search和cross validation(交叉验证)来得到更好的参数选择，而不是手动设定
+from sklearn import svm
+clf = svm.SVC(gamma=0.001, C=100.)
+clf.fit(digits.data[:-1], digits.target[:-1])  
+clf.predict(digits.data[-1:])
+
+#保存已经训练好的模型可以利用pickle或者sklearn中的joblib，后者更适合与大数据
+X, y = iris.data, iris.target
+clf.fit(X, y)  
+import pickle
+s = pickle.dumps(clf)
+clf2 = pickle.loads(s)
+clf2.predict(X[0:1])
+y[0]
+from sklearn.externals import joblib
+joblib.dump(clf, 'filename.pkl') 
+clf = joblib.load('filename.pkl') 
+
+#设定数据的类型，默认float64
+import numpy as np
+from sklearn import random_projection
+rng = np.random.RandomState(0)
+X = rng.rand(10, 2000)
+X = np.array(X, dtype='float32')
+X.dtype
+transformer = random_projection.GaussianRandomProjection()
+X_new = transformer.fit_transform(X)
+X_new.dtype
+#回归算法会转换成float64，但分类算法会保持原来的格式
+from sklearn import datasets
+from sklearn.svm import SVC
+iris = datasets.load_iris()
+clf = SVC()
+clf.fit(iris.data, iris.target)  
+list(clf.predict(iris.data[:3]))
+clf.fit(iris.data, iris.target_names[iris.target])  
+list(clf.predict(iris.data[:3])) 
+#结果标签可以是文本类型，这样结果返回也是文本类型。
+
+
+import numpy as np
+from sklearn.svm import SVC
+rng = np.random.RandomState(0)
+X = rng.rand(100, 10)
+y = rng.binomial(1, 0.5, 100)
+X_test = rng.rand(5, 10)
+clf = SVC()
+clf.set_params(kernel='linear').fit(X, y)#设定kernel参数
+clf.predict(X_test)
+clf.set_params(kernel='rbf').fit(X, y)  
+clf.predict(X_test)
+
+#结果标签多于二元的分类
+from sklearn.svm import SVC
+from sklearn.multiclass import OneVsRestClassifier#一对多分类器
+from sklearn.preprocessing import LabelBinarizer
+X = [[1, 2], [2, 4], [4, 5], [3, 2], [3, 1]]
+y = [0, 0, 1, 1, 2]
+classif = OneVsRestClassifier(estimator=SVC(random_state=0))
+classif.fit(X, y).predict(X)
+#转换为二进制标签
+y = LabelBinarizer().fit_transform(y)
+classif.fit(X, y).predict(X)
+#array([[1, 0, 0],   结果
+#       [1, 0, 0],
+#       [0, 1, 0],
+#       [0, 0, 0],
+#       [0, 0, 0]])
+#为一个实例分配多个标签y
+from sklearn.preprocessing import MultiLabelBinarizer
+y = [[0, 1], [0, 2], [1, 3], [0, 2, 3], [2, 4]]
+y = MultiLabelBinarizer().fit_transform(y)
+classif.fit(X, y).predict(X)
+#array([[1, 1, 0, 0, 0],   结果
+#       [1, 0, 1, 0, 0],
+#       [0, 1, 0, 1, 0],
+#       [1, 0, 1, 1, 0],
+#       [0, 0, 1, 0, 1]])
+
+
+
+#################################################################333
+##################################################################3
+'''
+scikit-learn Tutorials
+'''
+#载入数据
+from sklearn import datasets
+iris = datasets.load_iris()
+data = iris.data
+data.shape
+digits = datasets.load_digits()
+digits.images.shape
+#(1797, 8, 8)
+
+import matplotlib.pyplot as plt 
+plt.imshow(digits.images[-1], cmap=plt.cm.gray_r) 
+#把最后一副图片画出来
+
+data = digits.images.reshape((digits.images.shape[0], -1))
+#将8X8的像素转换成64，-1表示根据第一个维度自动计算剩下维度
+
+#设定算法的参数，得到参数，利用模型拟合数据，以及列出模型所有参数
+#estimator = Estimator(param1=1, param2=2)
+#estimator.param1
+#estimator.fit(data)
+#estimator.estimated_param_ 
+
+
+'''
+Supervised learning
+'''
+###############K最近邻算法#######################
+import numpy as np
+from sklearn import datasets
+iris = datasets.load_iris()
+iris_X = iris.data
+iris_y = iris.target
+np.unique(iris_y)#返回一个数组，去掉重复元素
+#array([0, 1, 2])
+
+# Split iris data in train and test data
+# A random permutation, to split the data randomly
+np.random.seed(0)#设定random.seed可以让同一个随机样本重复出现
+indices = np.random.permutation(len(iris_X))#在样本中随机选取index
+iris_X_train = iris_X[indices[:-10]]
+iris_y_train = iris_y[indices[:-10]]
+iris_X_test  = iris_X[indices[-10:]]#取最后10个样本作为测试样本
+iris_y_test  = iris_y[indices[-10:]]
+# Create and fit a nearest-neighbor classifier
+from sklearn.neighbors import KNeighborsClassifier
+knn = KNeighborsClassifier()
+knn.fit(iris_X_train, iris_y_train) 
+#KNeighborsClassifier(algorithm='auto', leaf_size=30, metric='minkowski',
+#           metric_params=None, n_jobs=1, n_neighbors=5, p=2,
+#           weights='uniform')
+knn.predict(iris_X_test)
+#array([1, 2, 1, 0, 0, 0, 2, 1, 2, 0])
+iris_y_test
+#array([1, 1, 1, 0, 0, 0, 2, 1, 2, 0])
+#注意数据维度越高，需要的数据点就越多，如果一维数据需要10个数据点，则五维数据需要10^5个数据点。具体看维灾难的信息。
+
+
+
+###############线性回归算法#######################
+#糖尿病数据
+#The diabetes dataset consists of 10 physiological variables (age, sex, weight, blood pressure) measure 
+#on 442 patients, and an indication of disease progression after one year
+diabetes = datasets.load_diabetes()
+diabetes_X_train = diabetes.data[:-20]
+diabetes_X_test  = diabetes.data[-20:]
+diabetes_y_train = diabetes.target[:-20]
+diabetes_y_test  = diabetes.target[-20:]
+from sklearn import linear_model
+import numpy as np
+regr = linear_model.LinearRegression()
+regr.fit(diabetes_X_train, diabetes_y_train)
+#LinearRegression(copy_X=True, fit_intercept=True, n_jobs=1, normalize=False)
+print(regr.coef_)#得到回归系数
+#误差平方的平均值
+np.mean((regr.predict(diabetes_X_test)-diabetes_y_test)**2)
+#2004.56760268...
+# Explained variance score: 1 is perfect prediction and 0 means that 
+#there is no linear relationship between X and y.
+regr.score(diabetes_X_test, diabetes_y_test) 
+#0.5850753022690
+
+#如果只有很少的数据，这时噪声的干扰会很大程度地改变拟合结果，如下图
+X = np.c_[ .5, 1].T
+y = [.5, 1]
+test = np.c_[ 0, 2].T
+regr = linear_model.LinearRegression()
+import matplotlib.pyplot as plt 
+plt.figure() 
+np.random.seed(0)
+#任意作六个随机扰动的数据集，每个数据集只有两个数据，然后画图
+for _ in range(6): 
+    this_X = .1*np.random.normal(size=(2, 1)) + X
+    regr.fit(this_X, y)
+    plt.plot(test, regr.predict(test)) 
+    plt.scatter(this_X, y, s=3)  
+#上面的结果在数据点和回归系数数量相近时不可靠，或者由于不同维度之间相关性太强导致回归有问题，这时可以引入岭回归（Ridge）
+#实际情况中，如果特征太多，或者特征之间的相关性太强（多重共线性），这时每项的系数可能非常大，x的微小变动可能导致y的大变。
+#可以通过选择特征子集或者其他方法来缩减维度。
+
+#在岭回归中，通过在损失函数中增加对系数的惩罚项来约束系数增大。从而降低噪声数据对结果的影响，同时也能防止过拟合。
+#如果惩罚项是参数的l2范数，就是脊回归(Ridge Regression)
+#如果惩罚项是参数的l1范数，就是套索回归（Lasso Regrission）
+#这里的alpha是惩罚项的系数，alpha越大，各项系数越小，当alpha=0时回到最小二乘法。
+#当alpha越大，bias越大 and variance越小
+regr = linear_model.Ridge(alpha=.1)
+plt.figure() 
+np.random.seed(0)
+for _ in range(6): 
+    this_X = .1*np.random.normal(size=(2, 1)) + X
+    regr.fit(this_X, y)
+    plt.plot(test, regr.predict(test)) 
+    plt.scatter(this_X, y, s=3) 
+#取6个不同的alpha值，然后重新fit得到score值。
+alphas = np.logspace(-4, -1, 6)
+#from __future__ import print_function，这句要放在文件开头，所以这里注释掉
+print([regr.set_params(alpha=alpha
+             ).fit(diabetes_X_train, diabetes_y_train,
+             ).score(diabetes_X_test, diabetes_y_test) for alpha in alphas]) 
+
+#有些变量在预测结果时几乎不影响结果，但在岭回归中它们的系数很小，但不为零。这时，套索方法可以将一些系数设置为零。
+regr = linear_model.Lasso()#套索回归，还有一个LassoLars方法，专门用来对估计的权向量非常稀疏（即观察值sample很少的问题）的问题。
+scores = [regr.set_params(alpha=alpha
+             ).fit(diabetes_X_train, diabetes_y_train
+             ).score(diabetes_X_test, diabetes_y_test)
+        for alpha in alphas]
+best_alpha = alphas[scores.index(max(scores))]#先测试不同的alpha值，然后将scores最大的alpha代入计算
+regr.alpha = best_alpha
+regr.fit(diabetes_X_train, diabetes_y_train)
+#Lasso(alpha=0.025118864315095794, copy_X=True, fit_intercept=True,
+#   max_iter=1000, normalize=False, positive=False, precompute=False,
+#   random_state=None, selection='cyclic', tol=0.0001, warm_start=False)
+print(regr.coef_)
+#[   0.         -212.43764548  517.19478111  313.77959962 -160.8303982    -0.
+# -187.19554705   69.38229038  508.66011217   71.84239008]
+
+#逻辑斯蒂回归
+logistic = linear_model.LogisticRegression(C=1e5)
+logistic.fit(iris_X_train, iris_y_train)
+#对于多类结果回归，需要进行one-versus-all classifiers and then use a voting heuristic for the final decision.
+#这里有一个参数penalty='l2'关于惩罚项属于l1范数还是l2范数，C参数是指惩罚项的系数
+
+
+
+###############支持向量机（SVM）算法#######################
+#正则化由C参数设定：C的小值意味着使用分离线周围的许多或全部观察值（更正则化）来计算边界; 
+#C的大值意味着边界在靠近分离线的观察值上被计算（较少正则化）
+#支持向量机可以用于回归-SVR（支持向量回归），或者用于分类-SVC（支持向量分类）。
+#需要先归一化各维度的数据
+from sklearn import svm
+svc = svm.SVC(kernel='linear')#线性分界面
+svc.fit(iris_X_train, iris_y_train)
+svc = svm.SVC(kernel='poly', degree=3)#分界面为三阶多项式表达的曲面
+svc = svm.SVC(kernel='rbf')#Radial Basis Function，对成团的数据
+#下载svm_gui.py可以利用可视化方法来检查数据，以及确定要修改的参数
+
+
+
+'''
+模型选择Model selection
+'''
+#每个模型都有一个score方法来给出该模型的好坏程度，越大越好。
+from sklearn import datasets, svm
+digits = datasets.load_digits()
+X_digits = digits.data
+y_digits = digits.target
+svc = svm.SVC(C=1, kernel='linear')
+svc.fit(X_digits[:-100], y_digits[:-100]).score(X_digits[-100:], y_digits[-100:])
+
+#k折交叉检验
+import numpy as np
+X_folds = np.array_split(X_digits, 3)
+y_folds = np.array_split(y_digits, 3)
+scores = list()
+for k in range(3):
+    # We use 'list' to copy, in order to 'pop' later on
+    X_train = list(X_folds)
+    X_test  = X_train.pop(k) #弹出其中一个部分作为测试集，剩下的就是训练集
+    X_train = np.concatenate(X_train)#将剩下的拼接成一个完整的数组
+    y_train = list(y_folds)
+    y_test  = y_train.pop(k)
+    y_train = np.concatenate(y_train)
+    scores.append(svc.fit(X_train, y_train).score(X_test, y_test))
+print(scores)
+#利用KFoldh和cross_val_score做k折交叉检验
+from sklearn.model_selection import KFold, cross_val_score
+X = ["a", "a", "b", "c", "c", "c"]
+k_fold = KFold(n_splits=3)#设定折数
+for train_indices, test_indices in k_fold.split(X):
+     print('Train: %s | test: %s' % (train_indices, test_indices))
+[svc.fit(X_digits[train], y_digits[train]).score(X_digits[test], y_digits[test]) \
+ for train, test in k_fold.split(X_digits)]
+cross_val_score(svc, X_digits, y_digits, cv=k_fold, n_jobs=-1)
+#一次性将k个scor值得到。n_jobs = -1意味着计算将被分派到计算机的所有CPU上。
+cross_val_score(svc, X_digits, y_digits, cv=k_fold, scoring='precision_macro')#可以提供评分参数来指定评分方法。
+
+
+#Grid-search and cross-validated estimators
+from sklearn.model_selection import GridSearchCV, cross_val_score
+Cs = np.logspace(-6, -1, 10)#设定参数变动的范围和数量
+clf = GridSearchCV(estimator=svc, param_grid=dict(C=Cs), n_jobs=-1)#分别将C参数设为不同的值，GridSearchCV默认用三折交叉检验
+clf.fit(X_digits[:1000], y_digits[:1000]) 
+#这里两个交叉验证循环并行执行：一个由GridSearchCV估计器来设置伽玛，另一个通过cross_val_score来测量估计器的预测性能。 
+#得到的分数是对新数据的预测分数的无偏估计。       
+clf.best_score_   #得到最优的score                               
+clf.best_estimator_.C    #得到最优的C值                        
+# Prediction performance on test set is not as good as on train set
+clf.score(X_digits[1000:], y_digits[1000:])    #得到测试集下的score  
+
+#自动选择参数，通过交叉验证来选择更好的参数
+from sklearn import linear_model, datasets
+lasso = linear_model.LassoCV()
+diabetes = datasets.load_diabetes()
+X_diabetes = diabetes.data
+y_diabetes = diabetes.target
+lasso.fit(X_diabetes, y_diabetes)
+# The estimator chose automatically its lambda:
+lasso.alpha_ 
+
+
+
+'''
+Unsupervised learning
+'''
+###############K-means聚类算法#######################
+from sklearn import cluster, datasets
+iris = datasets.load_iris()
+X_iris = iris.data
+y_iris = iris.target
+k_means = cluster.KMeans(n_clusters=3)#指定有三个成分
+k_means.fit(X_iris) 
+print(k_means.labels_[::10])#聚类算法结果
+print(y_iris[::10])#实际的分类
+#实际情况下很难得到正确的分类数量，而且随机选取的初始值可能让结果收敛到局部最小值
+#别尝试解释聚类的结果
+
+#聚类和KMeans可以被看作是选择少量样本来压缩信息的一种方式。 这个问题有时被称为矢量量化vector quantization。
+import scipy as sp
+try:
+   face = sp.face(gray=True)
+except AttributeError:
+   from scipy import misc
+   face = misc.face(gray=True)
+X = face.reshape((-1, 1)) # We need an (n_sample, n_feature) array
+k_means = cluster.KMeans(n_clusters=5, n_init=1)
+k_means.fit(X) #fit的是一维的数据，仅在某一维上做聚类
+values = k_means.cluster_centers_.squeeze()
+labels = k_means.labels_
+face_compressed = np.choose(labels, values)#得到聚类结果
+face_compressed.shape = face.shape#重新构造原始矩阵的形状
+
+
+#Hierarchical agglomerative clustering(分层凝聚聚类)
+#分层聚类方法是一种聚类分析，旨在构建聚类的层次结构。一共有两种：
+#凝聚式 - 自下而上的方法：每一个样本开始于它自己的簇中，并且以这种方式迭代地合并簇以最小化连接标准。 
+#        当兴趣集群只有几个样本，这种方法是特别有趣的。 当簇的数目很大时，它比k-means在计算上更有效率。
+#分裂 - 自上而下的方法：所有的样本开始于一个簇，当一个集群向下层移动时，这个集群被迭代地分裂。 
+#       为了估计大量的聚类，这种方法是缓慢的（由于所有的观察开始作为一个聚类，它递归分裂）和统计不适应。
+#Connectivity-constrained clustering连接受限的集群
+#通过聚集性聚类，可以通过给出连通性图来指定哪些样本可以聚集在一起。 scikit中的图由它们的邻接矩阵表示。
+#       通常使用稀疏矩阵。 例如，在对图像进行聚类时检索连接区域（有时也称为连通组件）可能很有用：
+import matplotlib.pyplot as plt
+from sklearn.feature_extraction.image import grid_to_graph
+from sklearn.cluster import AgglomerativeClustering
+# Generate data
+try:  # SciPy >= 0.16 have face in misc
+    from scipy.misc import face
+    face = face(gray=True)
+except ImportError:
+    face = sp.face(gray=True)
+# Resize it to 10% of the original size to speed up the processing
+face = sp.misc.imresize(face, 0.10) / 255.
+X = np.reshape(face, (-1, 1))
+# Define the structure A of the data. Pixels connected to their neighbors.
+connectivity = grid_to_graph(*face.shape)
+#得到一个图像的结构，根据他们类似的pixel来链接起它们的结构
+
+#Feature agglomeration特征聚集
+#我们已经看到，稀疏可以用来减轻维度的诅咒，如：与特征的数量相比观察量不足。 
+#      另一种方法是合并类似的特征：特征集聚。 这种方法可以通过对特征方向进行聚类来实现，换言之，对转置数据进行聚类。
+digits = datasets.load_digits()
+images = digits.images
+X = np.reshape(images, (len(images), -1))
+connectivity = grid_to_graph(*images[0].shape)
+agglo = cluster.FeatureAgglomeration(connectivity=connectivity, n_clusters=32)
+agglo.fit(X) 
+#FeatureAgglomeration(affinity='euclidean', compute_full_tree='auto',...
+X_reduced = agglo.transform(X)
+X_approx = agglo.inverse_transform(X_reduced)
+images_approx = np.reshape(X_approx, images.shape)
+#transform和inverse_transform方法：
+#Some estimators expose a transform method, 如用于数据集的降维.
+
+
+#Decompositions: from a signal to components and loadings 分解：从信号到组件和负载
+#Principal component analysis: PCA 主成分分析（可以用来降维）
+# Create a signal with only 2 useful dimensions
+x1 = np.random.normal(size=100)
+x2 = np.random.normal(size=100)
+x3 = x1 + x2
+X = np.c_[x1, x2, x3]
+X.shape
+#>>>(100L, 3L)
+from sklearn import decomposition
+pca = decomposition.PCA()
+pca.fit(X)
+print(pca.explained_variance_)  
+#>>>[  2.18565811e+00   1.19346747e+00   8.43026679e-32]
+# As we can see, only the 2 first components are useful
+pca.n_components = 2
+X_reduced = pca.fit_transform(X)
+X_reduced.shape
+#>>>(100L, 2L)
+
+
+#Independent Component Analysis: ICA   独立分量分析（ICA）
+#选择Component，以便他们的loadings分配携带最大量的独立信息
+# Generate sample data
+import numpy as np
+from scipy import signal
+time = np.linspace(0, 10, 2000)
+s1 = np.sin(2 * time)  # Signal 1 : sinusoidal signal
+s2 = np.sign(np.sin(3 * time))  # Signal 2 : square signal
+s3 = signal.sawtooth(2 * np.pi * time)  # Signal 3: saw tooth signal
+S = np.c_[s1, s2, s3]
+#得到三种时间信号，正弦
+S += 0.2 * np.random.normal(size=S.shape)  # Add noise
+S /= S.std(axis=0)  # Standardize data
+# Mix data
+A = np.array([[1, 1, 1], [0.5, 2, 1], [1.5, 1, 2]])  # Mixing matrix
+X = np.dot(S, A.T)  # Generate observations
+# Compute ICA
+ica = decomposition.FastICA()
+S_ = ica.fit_transform(X)  # Get the estimated sources
+A_ = ica.mixing_.T
+np.allclose(X,  np.dot(S_, A_) + ica.mean_)
+
+
+
+'''
+Pipelining: Putting it all together
+'''
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import linear_model, decomposition, datasets
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV
+logistic = linear_model.LogisticRegression()
+pca = decomposition.PCA()
+pipe = Pipeline(steps=[('pca', pca), ('logistic', logistic)])
+digits = datasets.load_digits()
+X_digits = digits.data
+y_digits = digits.target
+# Plot the PCA spectrum 得到一个不同成分数量的图
+pca.fit(X_digits)
+plt.figure(1, figsize=(4, 3))
+plt.clf()
+plt.axes([.2, .2, .7, .7])
+plt.plot(pca.explained_variance_, linewidth=2)
+plt.axis('tight')
+plt.xlabel('n_components')
+plt.ylabel('explained_variance_')
+# Prediction
+n_components = [20, 40, 64]
+Cs = np.logspace(-4, 4, 3)
+# Parameters of pipelines can be set using ‘__’ separated parameter names:
+estimator = GridSearchCV(pipe, dict(pca__n_components=n_components, logistic__C=Cs))
+estimator.fit(X_digits, y_digits)
+plt.axvline(estimator.best_estimator_.named_steps['pca'].n_components, linestyle=':', label='n_components chosen')
+#选出最好的分类器，并且得到这个分类器对应的分类数量
+plt.legend(prop=dict(size=12))
+plt.show()
+
+#网页上还有一个例子是关于面部识别的。
+#Face recognition with eigenfaces
+#代码很长，就不在这里列出来了。见下面的链接：
+#http://scikit-learn.org/stable/tutorial/statistical_inference/putting_together.html
+
+
+
+'''
+Working With Text Data
+用一个例子来说明使用流程
+'''
+categories = ['alt.atheism', 'soc.religion.christian', 'comp.graphics', 'sci.med']
+from sklearn.datasets import fetch_20newsgroups
+twenty_train = fetch_20newsgroups(subset='train', categories=categories, shuffle=True, random_state=42)
+#上面的命令是下载该数据集
+twenty_train.target_names
+#>>>['alt.atheism', 'comp.graphics', 'sci.med', 'soc.religion.christian']
+len(twenty_train.data)
+#>>>2557
+len(twenty_train.filenames)
+print("\n".join(twenty_train.data[0].split("\n")[:3]))
+print(twenty_train.target_names[twenty_train.target[0]])
+twenty_train.target[:10]
+for t in twenty_train.target[:10]:
+     print(twenty_train.target_names[t])
+#向量化文本内容
+from sklearn.feature_extraction.text import CountVectorizer
+count_vect = CountVectorizer()
+X_train_counts = count_vect.fit_transform(twenty_train.data) #向量化
+X_train_counts.shape #向量化之后的数据形式
+#>>>(2257, 35788)
+count_vect.vocabulary_.get(u'algorithm') #得到'algorithm'一词在数据中的频数
+
+#从出现次数到频率
+#由于长的文档词出现的次数往往比较多，所以应该用出现次数除以所有字数得到一个频率叫做tf（Term Frequencies）。
+#另一个改进是缩减语料库中许多文档中出现的单词的权重，因此比仅在语料库的较小部分中出现的单词更少提供信息。
+#tf–idf（“Term Frequency times Inverse Document Frequency”）
+#TFIDF的主要思想是：如果某个词或短语在一篇文章中出现的频率TF高，
+#并且在其他文章中很少出现，则认为此词或者短语具有很好的类别区分能力，适合用来分类。
+#某一特定文件内的高词语频率，以及该词语在整个文件集合中的低文件频率，可以产生出高权重的TF-IDF。
+from sklearn.feature_extraction.text import TfidfTransformer
+tf_transformer = TfidfTransformer(use_idf=False).fit(X_train_counts)#fit our estimator to the data
+X_train_tf = tf_transformer.transform(X_train_counts)#transform our count-matrix to a tf-idf representation
+X_train_tf.shape
+#同样地，可以利用如下几行命令实现同样的功能
+tfidf_transformer = TfidfTransformer()
+X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
+X_train_tfidf.shape
+#开始Training a classifier
+from sklearn.naive_bayes import MultinomialNB #利用朴素贝叶斯方法，其中包含几种方法，这里只用了多项式（Multinomial）方法对文本分类
+clf = MultinomialNB().fit(X_train_tfidf, twenty_train.target)#对数据进行分类
+#设计一个新的待分类文本来测试分类结果
+docs_new = ['God is love', 'OpenGL on the GPU is fast']
+X_new_counts = count_vect.transform(docs_new)
+X_new_tfidf = tfidf_transformer.transform(X_new_counts)
+predicted = clf.predict(X_new_tfidf)
+#输出分类结果
+for doc, category in zip(docs_new, predicted):
+    print('%r => %s' % (doc, twenty_train.target_names[category]))
+#>>>'God is love' => soc.religion.christian
+#>>>'OpenGL on the GPU is fast' => comp.graphics
+
+#设计一个pipeline流程
+from sklearn.pipeline import Pipeline
+text_clf = Pipeline([('vect', CountVectorizer()), 
+                     ('tfidf', TfidfTransformer()), 
+                     ('clf', MultinomialNB()),])
+text_clf.fit(twenty_train.data, twenty_train.target)
+
+#评估测试模型的精度
+import numpy as np
+twenty_test = fetch_20newsgroups(subset='test',
+    categories=categories, shuffle=True, random_state=42)
+docs_test = twenty_test.data
+predicted = text_clf.predict(docs_test)#利用pipeline得到的text_clf对数据集进行预测
+np.mean(predicted == twenty_test.target)  #对预测的正确率进行平均
+#>>>0.8348...
+
+#同样地，如果利用更优的SVM方法进行建模，得到的模型精度：
+from sklearn.linear_model import SGDClassifier
+text_clf = Pipeline([('vect', CountVectorizer()),
+                     ('tfidf', TfidfTransformer()),
+                     ('clf', SGDClassifier(loss='hinge', penalty='l2',
+                                           alpha=1e-3, random_state=42,
+                                           max_iter=5, tol=None)),
+])
+text_clf.fit(twenty_train.data, twenty_train.target)  
+predicted = text_clf.predict(docs_test)
+np.mean(predicted == twenty_test.target)    
+#>>>0.912
+
+#scikit-learn还提供了更多的功能来显示结果的细节
+from sklearn import metrics
+print(metrics.classification_report(twenty_test.target, predicted,
+    target_names=twenty_test.target_names)) #classification_report
+metrics.confusion_matrix(twenty_test.target, predicted) #混淆矩阵
+
+#使用网格搜索进行参数调整
+from sklearn.model_selection import GridSearchCV
+parameters = {'vect__ngram_range': [(1, 1), (1, 2)],
+              'tfidf__use_idf': (True, False),
+              'clf__alpha': (1e-2, 1e-3),
+}
+#设置核心数n_jobs，-1参数是默认自动搜索核心数，用全部核心运行。
+gs_clf = GridSearchCV(text_clf, parameters, n_jobs=-1)
+#选取一个小的子集进行参数拟合
+gs_clf = gs_clf.fit(twenty_train.data[:400], twenty_train.target[:400])
+#进行预测
+twenty_train.target_names[gs_clf.predict(['God is love'])[0]]
+#得到模型最优分数以及参数
+gs_clf.best_score_
+for param_name in sorted(parameters.keys()):
+    print("%s: %r" % (param_name, gs_clf.best_params_[param_name]))
+#gs_clf.cv_results_
+
+
+
+
+
+
+
