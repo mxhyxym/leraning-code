@@ -1,0 +1,86 @@
+# -*- coding: utf-8 -*-
+"""
+scipy网站上的指南
+"""
+
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from scipy import linalg, optimize
+
+'''help'''
+np.info(optimize.fmin)
+help(optimize.fmin)
+
+'''快速构造数组: np.mgrid , np.ogrid , np.r_ , and np.c_'''
+a = np.concatenate(([3], [0]*5, np.arange(-1, 1.002, 2/9.0)))
+'''构造-1到1的十个等距离数，这十个数包含了-1与1两个端点'''
+a = np.r_[3,[0]*5,-1:1:10j]
+np.c_[np.array([[1,2,3]]), 0, 0, np.array([[4,5,6]])]
+'''产生提供N维体积的坐标阵列的N，N-d阵列'''
+np.mgrid[0:5,0:5]
+np.mgrid[0:5:4j,0:5:4j]
+
+from numpy import poly1d
+'''生成多项式'''
+p = poly1d([3,4,5])
+print(p)
+print(p*p)
+print(p.integ(k=6))#求原函数，积分
+print(p.deriv())#微分
+p([4])#当x=4时的结果
+
+'''向量化函数'''
+def addsubtract(a,b):
+    if a > b:
+        return a - b
+    else:
+        return a + b
+vec_addsubtract = np.vectorize(addsubtract)
+vec_addsubtract([0,3,6,9],[1,3,5,7])
+#array([1, 6, 1, 2])
+
+'''类型控制函数
+np.iscomplex
+np.isrea
+np.iscomplexobj
+np.isrealobj
+'''
+np.real#得到实部
+np.imag#得到虚部
+np.real_if_close#当虚部相对于实部很小时，可以转化为实数
+np.isscalar#检查是否标量
+np.cast['f'](np.pi)
+#array(3.1415927410125732, dtype=float32)
+
+x = np.r_[-2:3]
+#array([-2, -1,  0,  1,  2])
+np.select([x > 3, x >= 0], [0, x+2])
+#array([0, 0, 2, 3, 4])
+x = np.arange(10)
+condlist = [x<3, x>5]
+choicelist = [x, x**2]
+np.select(condlist, choicelist)
+#array([ 0,  1,  2,  0,  0,  0, 36, 49, 64, 81])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
