@@ -1,0 +1,71 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Nov 06 10:07:09 2017
+
+@author: ChaoLin
+"""
+import numpy as np
+
+a = np.arange(5)
+a.dtype
+a.dtype.itemsize#每个元素所占的字节数
+a.shape
+a.size
+
+t = np.dtype('Float64')
+t.char#得到类型的字符编码，d
+t.type
+t.str
+'''<f8中的<表示小端序（最低位字节存在低位地址处），反之>是大端序,
+类型是浮点型，用8位字节存储'''
+
+'''自定义数据类型'''
+t = np.dtype([('name', '|S40'), ('numitems', 'int32'), ('price', 'float32')])
+'''name属性是字符型40位'''
+t['name']
+
+'''切片'''
+a=np.arange(9)
+a[3:7]
+a[:7:2]#设步长
+a[::-1]#设倒叙输出
+b = np.arange(24).reshape(2,3,4)#修改矩阵形状
+b[0,0,0]
+b[0,:,:]
+b[0,1]
+b[0,1,::2]
+b[::-1]#第一维翻转
+
+'''改变矩阵形状'''
+b.ravel()#展平成一维
+b.flatten()#展平成一维
+b.shape=(6,4)
+b.transpose()#转置矩阵
+
+'''矩阵合成，组合'''
+a=np.arange(9).reshape
+np.hstack((a,b))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
