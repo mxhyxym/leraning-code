@@ -1,0 +1,295 @@
+sudo apt-get update
+sudo apt-get install mysql-server mysql-client
+sudo service mysql restart
+#start mysql
+mysql -u root -p
+--------------------------------------------------------
+#getting start
+SELECT VERSION();
+SELECT NOW();
+SELECT USER();
+
+#show engines of mysql
+SHOW ENGINES;
+SHOW ENGINES \G;
+
+#create database
+CREATE DATABASE t1;
+DROP DATABASE t1;
+SHOW DATABASES;
+CREATE DATABASE IF NOT EXISTS t1;
+SHOW WARNINGS;
+#show code
+SHOW CREATE DATABASE t1;
+#code:latin1(default), gbk, utf8.
+CREATE DATABASE IF NOT EXISTS t2 CHARACTER SET gbk;
+SHOW CREATE DATABASE t2;
+ALTER DATABASE t2 CHARACTER SET = utf8;
+#delete database
+DROP DATABASE IF EXISTS t2;
+
+
+#use database 
+USE t1;
+SELECT DATABASE();
+#create table
+CREATE TABLE IF NOT EXISTS t11(
+username VARCHAR(20),
+age TINYINT UNSIGNED,
+salary FLOAT(8,2) UNSIGNED
+);
+#show table
+SHOW TABLES;
+SHOW TABLES from mysql;
+SHOW COLUMNS FROM t11;
+
+#Insert record
+INSERT t11 VALUES('Tom', 25, 78953.25);
+INSERT t11(username, age) VALUES('Tom', 25);
+#show record
+SELECT * FROM t11;
+
+#columns can not be NULL
+CREATE TABLE t12(
+username VARCHAR(20) NOT NULL,
+age TINYINT UNSIGNED,
+salary FLOAT(8,2) UNSIGNED
+);
+SHOW COLUMNS FROM t12;
+INSERT t12 VALUES('Tom', NULL, 78953.25);
+SELECT * FROM t12;
+INSERT t12 VALUES(NULL, NULL, 78953.25);
+INSERT t12 VALUES('Tom', 'Tom', 78953.25);
+
+#give an id to each record, 1,2,3,4....
+CREATE TABLE t13(
+id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+username VARCHAR(20) NOT NULL,
+age TINYINT UNSIGNED,
+salary FLOAT(8,2) UNSIGNED
+);
+SHOW COLUMNS FROM t13;
+INSERT t13(username) VALUES('Tom');
+INSERT t13(username) VALUES('To2');
+INSERT t13(username) VALUES('To3');
+INSERT t13(username) VALUES('To4');
+SELECT * FROM t13;
+
+CREATE TABLE t14(
+id SMALLINT UNSIGNED PRIMARY KEY,
+username VARCHAR(20) NOT NULL,
+age TINYINT UNSIGNED,
+salary FLOAT(8,2) UNSIGNED
+);
+SHOW COLUMNS FROM t14;
+INSERT t14(id, username) VALUES(1,'Tom');
+INSERT t14(id, username) VALUES(2,'Tom');
+SELECT * FROM t14;
+INSERT t14(id, username) VALUES(2,'Tom');
+
+
+#UNIQUE KEY (can not be same with others, but number of UNIQUE KEY can > 1)
+CREATE TABLE t15(
+id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+username VARCHAR(20) NOT NULL UNIQUE KEY,
+age TINYINT UNSIGNED,
+salary FLOAT(8,2) UNSIGNED
+);
+SHOW COLUMNS FROM t15;
+INSERT t15(username, age) VALUES('Tom', 22);
+SELECT * FROM t15;
+
+#default values
+CREATE TABLE t16(
+id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+username VARCHAR(20) NOT NULL UNIQUE KEY,
+sex ENUM('1','2','3') DEFAULT '3'
+);
+SHOW COLUMNS FROM t16;
+INSERT t16(username) VALUES('Tom');
+SELECT * FROM t16;
+
+#foreign key
+CREATE TABLE province(
+id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(20) NOT NULL
+);
+#ENGINE=InnoDB
+SHOW CREATE TABLE province;
+CREATE TABLE uses(
+userid SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+username VARCHAR(20) NOT NULL,
+id SMALLINT UNSIGNED,
+FOREIGN KEY (id) REFERENCES province (id)
+);
+#type of FOREIGN KEY should be same with REFERENCES
+SHOW COLUMNS FROM uses;
+#check index of table
+SHOW INDEX FROM province\G;
+SHOW INDEX FROM uses\G;
+SHOW CREATE TABLE uses\G;
+
+CREATE TABLE uses1(
+userid SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+username VARCHAR(20) NOT NULL,
+id SMALLINT UNSIGNED,
+FOREIGN KEY (id) REFERENCES province (id) ON DELETE CASCADE
+);
+SHOW CREATE TABLE uses1;
+
+#insert record, father(province) first, son(uses) later.
+INSERT province(name) VALUES('B');
+INSERT province(name) VALUES('C');
+SELECT * FROM province;
+INSERT uses1(username, id) VALUES('b', 2);
+SELECT * FROM uses1;
+#CASCADE mean that data of son will delete when data of father del 
+#SET NULL mean ... set to NULL ...
+#RESTRICT/NO ACTION: prohibit the change of father
+DELETE FROM province WHERE id = 2;
+SELECT * FROM uses1;
+
+#add col
+SHOW COLUMNS FROM uses1;
+ALTER TABLE uses1 ADD age TINYINT UNSIGNED NOT NULL DEFAULT 10;
+ALTER TABLE uses1 ADD password varchar(32) NOT NULL AFTER username;
+ALTER TABLE uses1 ADD truename varchar(32) NOT NULL FIRST;
+ALTER TABLE uses1 ADD (truename1 varchar(32) NOT NULL, truename2 varchar(32) NOT NULL);
+SHOW COLUMNS FROM uses1;
+
+#del col
+ALTER TABLE uses1 DROP truename;
+ALTER TABLE uses1 DROP truename1, DROP truename2;
+ALTER TABLE uses1 DROP truename1, ADD truename varchar(32) NOT NULL FIRST;
+
+#add/del primary key
+CREATE TABlE user2(
+username VARCHAR(10) NOT NULL,
+pid SMALLINT UNSIGNED
+);
+ALTER TABLE user2 ADD id SMALLINT UNSIGNED;
+SHOW COLUMNS FROM user2;
+ALTER TABLE user2 ADD CONSTRAINT PK_user2_id PRIMARY KEY (id);
+ALTER TABLE user2 ADD UNIQUE (username);
+SHOW CREATE TABLE user2;
+ALTER TABLE user2 ADD FOREIGN KEY (pid) REFERENCES province (id);
+ALTER TABLE user2 ADD age TINYINT UNSIGNED NOT NULL;
+ALTER TABLE user2 ALTER age SET DEFAULT 15;
+ALTER TABLE user2 ALTER age DROP DEFAULT;
+ALTER TABLE user2 DROP PRIMARY KEY;
+ALTER TABLE user2 DROP KEY username;
+SHOW CREATE TABLE user2;
+ALTER TABLE user2 DROP FOREIGN KEY user2_ibfk_1;
+ALTER TABLE user2 DROP KEY pid;
+SHOW CREATE TABLE user2;
+
+#change position type and clomun name
+ALTER TABLE user2 MODIFY id SMALLINT UNSIGNED NOT NULL FIRST;
+ALTER TABLE user2 MODIFY id INT UNSIGNED NOT NULL FIRST;
+ALTER TABLE user2 MODIFY id SMALLINT UNSIGNED NOT NULL AFTER username;
+ALTER TABLE user2 CHANGE pid p_id TINYINT UNSIGNED NOT NULL;
+ALTER TABLE user2 RENAME user3;
+RENAME user2 TO user3;
+
+
+#AUTO_INCREMENT donot need to give value, but NULL/DEFAULT
+CREATE TABLE user3(
+id SMALLINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+username VARCHAR(20) NOT NULL,
+password VARCHAR(32) NOT NULL,
+AGE TINYINT UNSIGNED NOT NULL DEFAULT 10,
+sex BOOLEAN
+);
+INSERT user3 VALUES(NULL, 'Tom', '123', 25, 1);
+INSERT user3 VALUES(NULL, 'Tom', '123', 3*7-6, 1);
+INSERT user3 VALUES(NULL, 'Tom', '123', DEFAULT, 1);
+INSERT user3 VALUES(NULL, 'Tom', '123', 25, 1), (NULL, 'rose', MD5('123'), DEFAULT, 0);
+INSERT user3 SET username='Ben', password='456';
+SELECT * FROM user3;
+
+#change the data in the database
+UPDATE user3 SET age=age+5;
+UPDATE user3 SET age=age-id, sex=0;
+UPDATE user3 SET age=age+10 WHERE id%2=0;
+DELETE FROM user3 WHERE id=2;
+
+#find record
+SELECT 3+5;
+SELECT * FROM user3;
+SELECT id, username FROM user3;
+SELECT username,id  FROM user3;
+SELECT user3.id, user3.username FROM user3;
+SELECT id AS userid, username AS uname FROM user3;
+SELECT sex FROM user3 GROUP BY sex;
+SELECT sex,age FROM user3 GROUP BY sex HAVING age > 15;
+SELECT sex FROM user3 GROUP BY sex HAVING count(id) > 0;
+SELECT * FROM user3 ORDER BY id ASC;
+SELECT * FROM user3 ORDER BY age,id DESC;
+
+#limit the number of the results
+SELECT * FROM user3;
+SELECT * FROM user3 LIMIT 2;
+SELECT * FROM user3 LIMIT 2,2;
+SELECT * FROM user3 ORDER BY id DESC LIMIT 2,2;
+
+
+#insert records from other tables
+INSERT test(username) SELECT username FROM user3 WHERE age>30 
+
+
+
+###############################################################
+################ book###############
+###############################################################
+#PRIMARY KEY
+CREATE TABLE tb_temp(
+id INT(11),
+name VARCHAR(25),
+deptID INT(11),
+salary FLOAT,
+PRIMARY KEY(id)
+);
+
+CREATE TABLE tb_temp1(
+id INT(11),
+name VARCHAR(25),
+deptID INT(11),
+salary FLOAT,
+PRIMARY KEY(name, deptID)
+);
+
+CREATE TABLE tb_temp2(
+id INT(11) PRIMARY KEY,
+deptID INT(11),
+CONSTRAINT fk_emp_dept1 FOREIGN KEY (deptID) references tb_temp (id)
+);
+
+#describe the structure fo table
+DESC tb_temp2;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
