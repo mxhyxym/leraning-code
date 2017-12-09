@@ -236,6 +236,12 @@ SELECT * FROM user3 ORDER BY id DESC LIMIT 2,2;
 #insert records from other tables
 INSERT test(username) SELECT username FROM user3 WHERE age>30 
 
+#数据显示乱码问题，下面仅改变输出显示的编码，没有改变原始数据的编码
+SET NAMES gbt;
+
+
+
+
 
 
 ###############################################################
