@@ -239,7 +239,64 @@ INSERT test(username) SELECT username FROM user3 WHERE age>30
 #数据显示乱码问题，下面仅改变输出显示的编码，没有改变原始数据的编码
 SET NAMES gbt;
 
+#子查询：嵌套在查询内部，必须被括号包含。
+#比较运算符的子查询
+SELECT AVG(good_price) FROM tdb_goods;
+SELECT ROUND(AVG(good_price),2) FROM tdb_goods;
+SELECT goods_id, goods_name, goods_price FROM tdb_goods WHERE goods_price >=3500;
+SELECT goods_id, goods_name, goods_price FROM tdb_goods WHERE goods_price >= (SELECT ROUND(AVG(good_price),2) FROM tdb_goods) ;
+#上面显示子查询的结果可以用在查询中，子查询中可以继续嵌套子查询
+SELECT goods_price FROM tdb_goods WHERE goods_cate="超极本";
+SELECT goods_price FROM tdb_goods WHERE goods_cate="超极本";
+SELECT * FROM tdb_goods WHERE goods_cate="超极本" \G;
+SELECT goods_id, goods_name, goods_price FROM tdb_goods WHERE goods_price > 
+(SELECT goods_price FROM tdb_goods WHERE goods_cate="超极本")
+#上面命令错误，因为子查询返回超过一个结果。修改为下面的：ANY（任何一个） SOME（任何一个） ALL（全部）
+SELECT goods_id, goods_name, goods_price FROM tdb_goods WHERE goods_price > 
+ALL(SELECT goods_price FROM tdb_goods WHERE goods_cate="超极本")
+SELECT goods_id, goods_name, goods_price FROM tdb_goods WHERE goods_price =  #等于号时只能是ANY/SOME,不等于只能是ALL
+ANY(SELECT goods_price FROM tdb_goods WHERE goods_cate="超极本")
 
+#IN / ONT IN 引发的子查询
+#指在子查询里面或者不在子查询里面，IN等价于=ANY, NOT IN 等价于!=ALL/<>ALL
+
+#EXIST / NOT EXIST 引发的子查询，返回的是ture/false
+
+#得到某一个属性的所有可能值
+SELECT goods_cate FROM  tdb_goods GROUP BY goods_cate;
+#将结果写入另一个数据表
+INSERT tdb_goods_cate(cate_name) SELECT goods_cate FROM  tdb_goods GROUP BY goods_cate;
+#更新原表，使得外键起作用。即多表更新。
+#表的链接，goods_cate是tdb_goods的属性，cate_id,cate_name是tdb_goods_cate的属性。
+UPDATE tdb_goods INNER JOIN tdb_goods_cate ON goods_cate = cate_name SET goods_cate = cate_id;
+
+#表的更新一步到位，即创建数据表的同时，将查询的结果写入到数据表
+CREATE TABLE tdb_goods_brand (
+brand_id SMALLINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+brand_name VARCHAR(40) NOT NULL)
+SELECT brand_name FROM tdb_goods GROUP BY brand_name;
+SELECT * FROM tdb_goods_brand;
+UPDATE tdb_goods INNER JOIN tdb_goods_brand ON goods_brand = brand_name SET goods_brand = brand_id;
+#如果表之间有相同的属性名，这时会出现含义模糊的错误。这时可以给表起别名：
+UPDATE tdb_goods AS g INNER JOIN tdb_goods_brand AS b ON g.goods_brand = b.brand_name SET g.goods_brand = b.brand_id;
+
+#接下来要修改原来表的结构
+ALTER TABLE tdb_goods CHANGE goods_cate cate_id SMALLINT UNSIGNED NOT NULL,
+CHANGE brand_name brand_id SMALLINT UNSIGNED NOT NULL;
+#可以创建事实外键，而不是创建物理外键。这可以通过连接来实现。
+
+#内连接，左外连接，右外连接。连接条件可以用ON/WHERE
+#内连接仅显示两个表相交的部分
+SELECT goods_id, goods_name, cate_name FROM tdb_goods INNER JOIN tdb_goods_cate ON tdb_goods.cate_id = tdb_goods_cate.cate_id;
+#左外连接，表示显示左边表的全部，以及右边表的符合条件的部分，即相交的部分。左表有但右表没有的会显示为NULL。
+SELECT goods_id, goods_name, cate_name FROM tdb_goods LEFT JOIN tdb_goods_cate ON tdb_goods.cate_id = tdb_goods_cate.cate_id;
+#右外连接，表示显示右边表的全部，以及左边表的符合条件的部分，即相交的部分。右表有但左表没有的会显示为NULL。
+SELECT goods_id, goods_name, cate_name FROM tdb_goods RIGHT JOIN tdb_goods_cate ON tdb_goods.cate_id = tdb_goods_cate.cate_id;
+
+#多表连接
+SELECT goods_id, goods_name, cate_name, brand_name, goods_price FROM tdb_goods AS g 
+INNER JOIN tdb_goods_cate AS c ON g.cate_id = c.cate_id,
+INNER JOIN tdb_goods_cate AS b ON g.brand_id = b.brand_id \G;
 
 
 
