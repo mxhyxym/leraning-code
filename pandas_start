@@ -1,0 +1,220 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+#创建一维数组
+s = pd.Series([1, 3, 5, np.nan, 6, 8])
+print(s)
+
+#得到6天的日期
+dates = pd.date_range('20130101', periods=6)
+print(dates)
+
+#创建二维数组并且指定行列标签
+df = pd.DataFrame(np.random.randn(6, 4), index=dates, columns=list('ABCD'))
+print(df)
+
+#创建二维数组，并且指定每一列的标签以及数据。
+df2 = pd.DataFrame({ 'A' : 1.,
+                     'B' : pd.Timestamp('20130102'),
+                     'C' : pd.Series(1,index=list(range(4)),dtype='float32'),
+                     'D' : np.array([3] * 4,dtype='int32'),
+                     'E' : pd.Categorical(["test", "train", "test", "train"]),
+                     'F' : 'foo' })
+print(df2)
+print(df2.dtypes)
+
+#查看数据前五行，和后三行
+df.head()
+df.tail(3)
+
+#显示出行索引，列名称以及数据块
+df.index
+df.columns
+df.values
+
+#快速显示数据的基本统计量
+df.describe()
+
+#转置数据
+df.T
+
+#按某一个轴进行排序，根据轴标签排序
+df.sort_index(axis=1, ascending=False)
+#按某个轴的值进行排序
+df.sort_values(by='B')
+
+#根据行列名称，索引出某一列组成一维数组，或者组成二维数组
+df['A']
+df[0:3]
+df['20130102':'20130104']
+df.loc[dates[0]]
+df.loc[:, ['A', 'B']]
+df.loc['20130102':'20130104', ['A', 'B']]
+df.loc['20130102',['A','B']]
+df.loc[dates[0], 'A']
+df.at[dates[0], 'A']
+
+#根据位置索引
+df.iloc[3]
+df.iloc[3:5, 0:2]
+df.iloc[[1, 2, 4],[0, 2]]
+df.iloc[1:3, :] #行切片
+df.iloc[:, 1:3] #列切片
+df.iloc[1, 1]
+df.iat[1, 1]
+
+#使用布尔值进行索引
+df[df.A > 0] #找到符合条件df.A > 0的行
+df[df > 0] #找到大于零的元素，其他设为NaN
+
+
+df2 = df.copy() #复制数据
+df2['E'] = ['one', 'one','two','three','four','three'] #添加列
+df2[df2['E'].isin(['two','four'])] #查找符合条件的行
+
+#设置新的列，然后插入到原来的数据框中。
+s1 = pd.Series([1,2,3,4,5,6], index=pd.date_range('20130102', periods=6))
+df['F'] = s1
+#设置元素的值
+df.at[dates[0],'A'] = 0 #按标签
+df.iat[0,1] = 0 #按索引
+df.loc[:,'D'] = np.array([5] * len(df)) #批量设置
+
+df2 = df.copy()#复制数据
+df2[df2 > 0] = -df2#对大于零的数值进行取反
+
+#添加一列，命名为E
+df1 = df.reindex(index=dates[0:4], columns=list(df.columns) + ['E'])
+df1.loc[dates[0]:dates[1],'E'] = 1  #把E列的前两个数据变为1
+#删除任何有空元素的行
+df1.dropna(how='any')
+#利用指定的数据进行缺失值填充
+df1.fillna(value=5)
+#找到NaN的所在，返回布尔值
+pd.isnull(df1)
+
+#描述性统计
+df.mean(axis=1)
+#对一维数组向前移动两个元素
+s = pd.Series([1,3,5,np.nan,6,8], index=dates).shift(2)
+#按照s的空值方式对df进行推广。
+df.sub(s, axis='index')
+
+#使用apply方法将函数用于数据
+df.apply(np.cumsum) #累加
+df.apply(lambda x: x.max() - x.min()) #极差
+
+#离散值统计频数
+s = pd.Series(np.random.randint(0, 7, size=10))
+s.value_counts()
+
+#变为小写字母
+s = pd.Series(['A', 'B', 'C', 'Aaba', 'Baca', np.nan, 'CABA', 'dog', 'cat'])
+s.str.lower()
+
+
+df = pd.DataFrame(np.random.randn(10, 4))
+pieces = [df[:3], df[3:7], df[7:]] #得到的是三个数组
+pd.concat(pieces) #数组拼接
+
+#SQL样式的合并，两个例子不一样。
+left = pd.DataFrame({'key': ['foo', 'foo'], 'lval': [1, 2]})
+right = pd.DataFrame({'key': ['foo', 'foo'], 'rval': [4, 5]})
+pd.merge(left, right, on='key')
+left = pd.DataFrame({'key': ['foo', 'bar'], 'lval': [1, 2]})
+right = pd.DataFrame({'key': ['foo', 'bar'], 'rval': [4, 5]})
+pd.merge(left, right, on='key')
+
+#添加行到数据框
+df = pd.DataFrame(np.random.randn(8, 4), columns=['A','B','C','D'])
+s = df.iloc[3]
+df.append(s, ignore_index=True)
+
+#Grouping分组
+df = pd.DataFrame({'A' : ['foo', 'bar', 'foo', 'bar',
+                          'foo', 'bar', 'foo', 'foo'],
+                   'B' : ['one', 'one', 'two', 'three',
+                          'two', 'two', 'one', 'three'],
+                   'C' : np.random.randn(8),
+                   'D' : np.random.randn(8)})
+df.groupby('A').sum() #以A列为分组依据求和
+df.groupby(['A','B']).sum() #以AB为分组依据层次求和
+
+#透视表Pivot Tables
+df = pd.DataFrame({'A' : ['one', 'one', 'two', 'three'] * 3,
+                   'B' : ['A', 'B', 'C'] * 4,
+                   'C' : ['foo', 'foo', 'foo', 'bar', 'bar', 'bar'] * 2,
+                   'D' : np.random.randn(12),
+                   'E' : np.random.randn(12)})
+#利用AB作为堆叠行，C作为列，D为值，做透视表。
+pd.pivot_table(df, values='D', index=['A', 'B'], columns=['C'])
+
+#时间序列
+#以秒为单位，采样100个时间点
+rng = pd.date_range('1/1/2012', periods=100, freq='S')
+#在每个时间点上选取一个随机值，按照rng排序
+ts = pd.Series(np.random.randint(0, 500, len(rng)), index=rng)
+#重新以五分钟为单位采样，即将五分钟之内的所有数值设为同一个bin，求和时将会得到这个bin中的和。
+ts.resample('5Min').sum()
+
+#时区
+rng = pd.date_range('3/6/2012 00:00', periods=5, freq='D')
+ts = pd.Series(np.random.randn(len(rng)), rng) #每一天创建一个随机数
+ts_utc = ts.tz_localize('UTC') #设置时区
+ts_utc.tz_convert('US/Eastern') #时区转换
+
+rng = pd.date_range('1/1/2012', periods=5, freq='M')
+ts = pd.Series(np.random.randn(len(rng)), index=rng)
+ps = ts.to_period() #转为以周期为单位
+ps.to_timestamp() #转换为时间戳
+
+prng = pd.period_range('1990Q1', '2000Q4', freq='Q-NOV') #以季度为周期
+ts = pd.Series(np.random.randn(len(prng)), prng)
+ts.index = (prng.asfreq('M', 'e') + 1).asfreq('H', 's') + 9 #转换为某月某日某个时间
+ts.head()
+
+
+#类别
+df = pd.DataFrame({"id":[1,2,3,4,5,6], "raw_grade":['a', 'b', 'b', 'a', 'a', 'e']})
+#将frade转换为类别类型。
+df["grade"] = df["raw_grade"].astype("category")
+df["grade"]
+#将类别重命名为有意义的字段。
+df["grade"].cat.categories = ["very good", "good", "very bad"]
+#设定所有可能的类别字段
+df["grade"] = df["grade"].cat.set_categories(["very bad", "bad", "medium", "good", "very good"])
+#按照grade类别的顺序排序
+df.sort_values(by="grade")
+#统计grade类的每个类别的数量。
+df.groupby("grade").size()
+
+
+#画图
+#给出1000个随机点，对应着1000天的数据
+ts = pd.Series(np.random.randn(1000), index=pd.date_range('1/1/2000', periods=1000))
+#求累计和
+ts = ts.cumsum()
+ts.plot()#画图
+#画出带数据标签的图。
+df = pd.DataFrame(np.random.randn(1000, 4), index=ts.index, columns=['A', 'B', 'C', 'D'])
+df = df.cumsum()
+plt.figure(); df.plot(); plt.legend(loc='best')
+
+
+
+#数据的输入输出
+df.to_csv('foo.csv') #保存在csv文件中
+pd.read_csv('foo.csv') #从csv中读取文件
+df.to_hdf('foo.h5','df')#保存在hdf5文件中
+pd.read_hdf('foo.h5','df') #从hdf5中读取文件
+df.to_excel('foo.xlsx', sheet_name='Sheet1') #excel
+pd.read_excel('foo.xlsx', 'Sheet1', index_col=None, na_values=['NA']) #excel
+
+
+
+
+
+
+
+
