@@ -299,6 +299,72 @@ INNER JOIN tdb_goods_cate AS c ON g.cate_id = c.cate_id,
 INNER JOIN tdb_goods_cate AS b ON g.brand_id = b.brand_id \G;
 
 
+#################################################################
+-----group by-------
+#按类别对数量求和，进行汇总
+select 类别, sum(数量) as 数量之和
+from A
+group by 类别
+
+#对返回的结果进行排序
+select 类别, sum(数量) AS 数量之和
+from A
+group by 类别
+order by sum(数量) desc
+
+select 类别, sum(数量) as 数量之和, 摘要
+from A
+group by 类别
+order by 类别 desc
+#执行后会提示错误。在select指定的字段要么就要包含在Group By语句的后面，作为分组的依据；要么就要被包含在聚合函数中。
+#这里“摘要”没有作为分组依据，也没有被包含在聚合函数中
+
+select 类别, 摘要, sum(数量) as 数量之和
+from A
+group by all 类别, 摘要
+#可以指定“摘要”字段，其原因在于“多列分组”中包含了“摘要字段”
+#“多列分组”实际上就是就是按照多列（类别+摘要）合并后的值进行分组。
+#这里对相同的“类别, 摘要”进行分组汇总，只有“类别, 摘要”都相同的才会合并
+
+#求各组平均值
+select 类别, avg(数量) AS 平均值 from A group by 类别;
+
+#求各组记录数目
+select 类别, count(*) AS 记录数 from A group by 类别;
+
+-----Having与Where的区别-----
+#where 子句的作用是在对查询结果进行分组前，将不符合where条件的行去掉，即在分组之前过滤数据，where条件中不能包含聚组函数，使用where条件过滤出特定的行。
+#having 子句的作用是筛选满足条件的组，即在分组之后过滤数据，条件中经常包含聚组函数，使用having 条件过滤出特定的组，也可以使用多个分组标准进行分组。
+
+select 类别, sum(数量) as 数量之和 from A
+group by 类别
+having sum(数量) > 18
+#联合使用
+select 类别, SUM(数量)from A
+where 数量 > 8
+group by 类别
+having SUM(数量) >  10
+
+select * from A where 数量 > 8
+
+-----Compute 和 Compute By-----
+#返回结果后计算（compute）统计结果
+select *
+from A
+where 数量>8
+compute max(数量),min(数量),avg(数量)
+#compute子句能够观察“查询结果”的数据细节或统计各列数据（如例中max、min和avg），返回结果由select列表和compute统计结果组成。
+
+select *
+from A
+where 数量 > 8
+order by 类别
+compute max(数量),min(数量),avg(数量) by 类别
+#示例11与示例10相比多了“order by 类别”和“... by 类别”，示例10的执行结果实际是按照分组（类别）进行了显示，
+#每组都是由该组数据列表和该组数统计结果组成，另外：
+#compute子句必须与order by子句用一起使用
+#compute...by与group by相比，group by 只能得到各组数据的统计结果，而不能看到各组数据
+
 
 
 ###############################################################
